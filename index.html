@@ -97,20 +97,25 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
 <input type="file" id="file" accept="image/*" hidden>
 
   <section class="screen active" id="s-landing">
-    <div class="brandbar"><div class="brand">SCENE<b>ME</b></div><div class="tag">Life is luxury</div></div>
-    <div class="hero"><img src="assets/hd/婚纱demo.jpg" alt=""><div class="grad"></div>
-      <div class="cap"><div class="tag" style="color:#e7cf95">One selfie. Every dream.</div>
+    <div class="hero">
+      <div class="brandbar"><div class="brand">SCENE<b>ME</b></div><div class="tag">Life is luxury</div></div>
+      <img src="assets/hd/婚纱demo.jpg" alt=""><div class="grad"></div>
+      <div class="cap"><div class="tag" style="color:#e7cf95">One selfie · every dream</div>
         <h1 class="serif">Your dream photos,<br>without the $2,000.</h1>
-        <p>Wedding gowns, Maldives, red carpets — dozens of looks from one selfie. Every original is yours. No arguing, no upsell.</p></div></div>
-    <div class="gallery"><h4>✨ Looks you could have today</h4>
+        <p>Wedding gowns, Maldives, red carpets — dozens of looks from a single selfie. Every original is yours.</p></div></div>
+    <div class="gallery"><h4>The Collection</h4>
       <div class="gstrip">
-        <img src="assets/hd/婚纱demo.jpg"><img src="assets/hd/马代demo.jpg"><img src="assets/hd/红毯demo.jpg"><img src="assets/hd/巴厘demo.jpg"><img src="assets/hd/夏威夷demo.jpg">
+        <figure><img src="assets/hd/婚纱demo.jpg"><figcaption>Wedding</figcaption></figure>
+        <figure><img src="assets/hd/马代demo.jpg"><figcaption>Maldives</figcaption></figure>
+        <figure><img src="assets/hd/红毯demo.jpg"><figcaption>Red Carpet</figcaption></figure>
+        <figure><img src="assets/hd/巴厘demo.jpg"><figcaption>Bali</figcaption></figure>
+        <figure><img src="assets/hd/夏威夷demo.jpg"><figcaption>Hawaii</figcaption></figure>
       </div></div>
     <div class="vs"><h4>Why Sceneme, not a $2,000 studio</h4>
-      · <b>Dozens of looks</b> (10+ wedding gowns × venues) vs a few<br>
-      · <b>Every original photo is yours</b> — studios upcharge / hold them back<br>
+      · <b>Dozens of looks</b> — 10+ gowns across venues, not a handful<br>
+      · <b>Every original is yours</b> — no upcharge, nothing held back<br>
       · No pressure, no upsell · redo anytime</div>
-    <div class="pad" style="padding-top:14px"><button class="btn gold" onclick="go('s-gate')">Start →</button>
+    <div class="pad" style="padding-top:16px"><button class="btn gold" onclick="go('s-gate')">Start your shoot</button>
       <small class="legal">18+ · AI-generated · your own photo only · no real celebrities.</small></div>
   </section>
 
@@ -142,13 +147,29 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
   </section>
 
   <section class="screen" id="s-paywall"><button class="back" onclick="go('s-scenes')">‹</button>
-    <div class="pad" style="padding-top:70px"><div class="tag">Step 3 · Unlock</div>
+    <div class="pad" style="padding-top:70px"><div class="tag">Step 3 · Choose your pack</div>
       <h1 class="serif" style="font-size:27px;margin:8px 0 16px">Create your shoot</h1>
       <div class="pwprev"><img id="pwImg" src="assets/hd/婚纱demo.jpg"><div><div style="font-weight:700" id="pwScene">Wedding</div><div style="font-size:13px;color:var(--muted)">You, styled into this look</div></div></div>
-      <div class="paywall" style="margin:0">
-        <div class="price"><b>$12.99</b><s>$29.99</s><span style="color:var(--gold);font-weight:700;font-size:13px">launch</span></div>
-        <ul><li><b>20 photos</b> — multiple gowns & venues</li><li>Full resolution, every original yours</li><li>Mix any looks · redo anytime</li></ul>
-        <button class="btn gold" id="payBtn" onclick="payAndGen(this)">Unlock & Create — $12.99</button>
+      <div class="tiers" id="tiers">
+        <div class="tier" data-sku="mini" onclick="pickTier('mini',this)">
+          <div class="radio"></div>
+          <div class="body"><div class="tname">Mini</div><div class="tdesc">5 photos · one quick look</div></div>
+          <div class="tprice"><b>$4.99</b></div>
+        </div>
+        <div class="tier feat" data-sku="shoot" onclick="pickTier('shoot',this)">
+          <div class="radio"></div>
+          <div class="body"><div class="tname">Dream Shoot <span class="pop">Most loved</span></div><div class="tdesc">20 photos · multiple gowns & venues</div></div>
+          <div class="tprice"><b>$12.99</b><s>$29.99</s></div>
+        </div>
+        <div class="tier" data-sku="studio" onclick="pickTier('studio',this)">
+          <div class="radio"></div>
+          <div class="body"><div class="tname">Studio</div><div class="tdesc">60 photos · every look, unlimited mixing</div></div>
+          <div class="tprice"><b>$24.99</b></div>
+        </div>
+      </div>
+      <div class="paywall" style="margin:0;padding:18px 22px">
+        <ul style="margin:0 0 16px"><li>Full resolution — every original is yours</li><li>Mix any looks · redo anytime</li><li>Labeled AI-generated · no upsell</li></ul>
+        <button class="btn gold" id="payBtn" onclick="payAndGen(this)">Unlock &amp; Create — $12.99</button>
         <small class="legal">vs $2,000+ at a studio. Pay first, then we generate.</small>
       </div></div>
   </section>
@@ -188,14 +209,21 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
 </div>
 <script>
 const SCENES=[
- {id:'wedding',name:'Wedding · 10+ gowns',hot:'🔥 #1',img:'assets/hd/婚纱demo.jpg'},
+ {id:'wedding',name:'Wedding · 10+ gowns',hot:'#1',img:'assets/hd/婚纱demo.jpg'},
+ {id:'redcarpet',name:'Red Carpet',hot:'Hot',img:'assets/hd/红毯demo.jpg'},
  {id:'maldives',name:'Maldives',hot:'Trending',img:'assets/hd/马代demo.jpg'},
  {id:'bali',name:'Bali',hot:'Trending',img:'assets/hd/巴厘demo.jpg'},
  {id:'hawaii',name:'Hawaii',hot:'New',img:'assets/hd/夏威夷demo.jpg'},
- {id:'redcarpet',name:'Red Carpet',hot:'🔥 Hot',img:'assets/hd/红毯demo.jpg'},
- {id:'socialite',name:'Socialite',hot:'New',img:'assets/hd/红毯demo.jpg'},
 ];
 let picked=null;
+const TIERS={mini:{price:'$4.99'},shoot:{price:'$12.99'},studio:{price:'$24.99'}};
+let selectedSku='shoot';
+function pickTier(sku,el){
+  if(!TIERS[sku])return; selectedSku=sku;
+  document.querySelectorAll('#tiers .tier').forEach(t=>t.classList.remove('sel'));
+  el&&el.classList.add('sel');
+  const b=document.getElementById('payBtn'); if(b)b.innerHTML='Unlock &amp; Create — '+TIERS[sku].price;
+}
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function gate(){document.getElementById('gateBtn').disabled=!(c18.checked&&cbio.checked&&cown.checked);}
 function showErr(m){const e=document.getElementById('errBox');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',5000);}
@@ -223,7 +251,7 @@ async function payAndGen(btn){
   if(!localStorage.getItem('gm_pet')){showErr('Please upload a photo first.');go('s-upload');return;}
   const old=btn.textContent;btn.disabled=true;btn.textContent='Opening checkout…';
   try{ localStorage.setItem('gm_scene',picked.id);
-    const r=await fetch('/api/pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sku:'shoot'})});
+    const r=await fetch('/api/pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sku:selectedSku})});
     const j=await r.json(); if(!j.url)throw new Error(j.error||'checkout failed');
     localStorage.setItem('gm_order',j.orderNo); window.location.href=j.url;
   }catch(e){btn.disabled=false;btn.textContent=old;showErr('Payment unavailable: '+e.message);}
@@ -349,5 +377,5 @@ async function shareVid(btn){
   btn.textContent=old;
 }
 
-renderScenes(); checkPaidThenGen();
+renderScenes(); pickTier('shoot',document.querySelector('#tiers .tier[data-sku="shoot"]')); checkPaidThenGen();
 </script></body></html>
