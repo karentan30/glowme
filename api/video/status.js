@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const SF_KEY = process.env.SILICONFLOW_API_KEY || '';
+const SF_KEY = (process.env.SILICONFLOW_API_KEY || '').trim();
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

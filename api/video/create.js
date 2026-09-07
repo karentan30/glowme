@@ -10,7 +10,7 @@
 
 const { createHmac } = require('crypto');
 
-const SF_KEY = process.env.SILICONFLOW_API_KEY || '';
+const SF_KEY = (process.env.SILICONFLOW_API_KEY || '').trim();
 const HUB_BASE = (process.env.LUMEE_HUB || '').replace(/\/$/, '');
 const HUB_SECRET = process.env.HUB_SECRET_GLOWME || '';
 const PROJECT_ID = 'glowme';
