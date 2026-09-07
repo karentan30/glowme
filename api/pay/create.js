@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
   const ts = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
   const outTradeNo = `GM${ts}${rand}`;
 
-  const hubBody = { method: 'stripe', product, amount, out_ref: outTradeNo, currency: 'usd', return_url: 'https://glowme.vercel.app/' };
+  const hubBody = { method: 'stripe', product, amount, out_ref: outTradeNo, currency: 'usd', return_url: 'https://glowme-fabulousslim.vercel.app/' };
   const rawBody = JSON.stringify(hubBody);
   const sign = hubSign(HUB_SECRET, rawBody);
 
