@@ -5,7 +5,9 @@
   "rewrites": [
     { "source": "/api/pay/create",   "destination": "/api/pay/create.js" },
     { "source": "/api/pay/status",   "destination": "/api/pay/status.js" },
-    { "source": "/api/pay/callback", "destination": "/api/pay/callback.js" }
+    { "source": "/api/pay/callback", "destination": "/api/pay/callback.js" },
+    { "source": "/api/video/create", "destination": "/api/video/create.js" },
+    { "source": "/api/video/status", "destination": "/api/video/status.js" }
   ],
   "headers": [
     {

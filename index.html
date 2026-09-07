@@ -141,7 +141,24 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.6;marg
     <label class="wmrow"><input type="checkbox" id="wmToggle" checked onchange="toggleWm()"><span><b>Keep @sceneme watermark</b> — off = clean image</span></label>
     <div class="hint" id="remainTxt"></div>
     <div class="row2"><button class="btn gold" onclick="downloadImg(this)">⬇ Download</button><button class="btn" onclick="shareImg(this)">Share</button></div>
+    <div class="row2" style="padding-top:2px"><button class="btn" id="vidBtn" style="background:linear-gradient(100deg,#7b5cff,#4a2fd0);color:#fff" onclick="makeVideo(this)">🎬 Make it a video</button></div>
     <div class="row2" style="padding-top:2px"><button class="btn ghost" onclick="anotherScene()">Try another look</button></div>
+  </section>
+
+  <section class="screen" id="s-vidgen"><div class="genwrap">
+    <div class="genpreview"><img id="vidGenPrev" src="assets/hd/婚纱demo.jpg"><div class="shimmer"></div></div>
+    <h2 class="serif" id="vidGenTitle">Animating your shoot…</h2><p id="vidGenMsg">Bringing the scene to life</p>
+    <div class="progline"><i id="vidProg"></i></div><div class="genstrip">🎬 real AI video · ~90s</div></div>
+  </section>
+
+  <section class="screen" id="s-vidresult"><button class="back" onclick="go('s-result')">‹</button>
+    <div class="result-img" style="background:#000"><video id="resVid" controls autoplay loop muted playsinline style="width:100%;display:block"></video><span class="ailbl">🎬 AI-generated</span></div>
+    <div class="paywall" style="margin:14px 22px 0"><div style="font-weight:700;margin-bottom:6px">📋 Caption for TikTok / IG</div>
+      <div id="vidCap" style="font-size:14px;color:#4a463f;line-height:1.6;margin-bottom:10px"></div>
+      <button class="btn ghost" style="padding:11px;font-size:14px" onclick="copyCaption(this)">Copy caption + hashtags</button>
+      <small class="legal">Add music in CapCut · post it ✨</small></div>
+    <div class="hint" id="vidRemainTxt"></div>
+    <div class="row2"><button class="btn gold" onclick="downloadVid(this)">⬇ Save video</button><button class="btn" onclick="shareVid(this)">Share</button></div>
   </section>
 
   <div class="err" id="errBox"></div>
@@ -234,5 +251,80 @@ async function shareImg(btn){ const old=btn.textContent; btn.textContent='Openin
     if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], text:'My dream shoot ✨ (AI) — sceneme'}); }
     else { await downloadImg(btn); alert('Saved! Open Instagram/TikTok and post it ✨'); }
   }catch(e){} btn.textContent=old; }
+// ---- 图生视频(i2v) ----
+const VMSGS=['Bringing the scene to life…','Letting your hair flow…','Softening the light…','Adding gentle motion…','Final render…'];
+let vidCaptionText='';
+async function makeVideo(btn){
+  const order=localStorage.getItem('gm_paidOrder'); const pet=localStorage.getItem('gm_pet');
+  if(!order){showErr('Unlock a pack first to make a video.');go('s-scenes');return;}
+  if(!pet||!picked){showErr('Generate a photo first.');go('s-scenes');return;}
+  document.getElementById('vidGenPrev').src=(window.resultUrl?('/api/image?url='+encodeURIComponent(window.resultUrl)):picked.img);
+  document.getElementById('vidGenTitle').textContent='Animating · '+picked.name;
+  go('s-vidgen');
+  let p=0,i=0;const prog=document.getElementById('vidProg'),msg=document.getElementById('vidGenMsg');
+  const t=setInterval(()=>{p=Math.min(94,p+2+Math.random()*4);prog.style.width=p+'%';msg.textContent=VMSGS[Math.min(i++,VMSGS.length-1)];},2200);
+  let img=pet;
+  try{
+    if(window.resultUrl){
+      const rr=await fetch('/api/image?url='+encodeURIComponent(window.resultUrl));
+      const bl=await rr.blob();
+      img=await new Promise((rs)=>{const fr=new FileReader();fr.onload=()=>rs(fr.result);fr.onerror=()=>rs(pet);fr.readAsDataURL(bl);});
+    }
+  }catch(_){}
+  try{
+    const r=await fetch('/api/video/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scene:picked.id,image:img,orderNo:order})});
+    const j=await r.json();
+    if(r.status===402){clearInterval(t);localStorage.removeItem('gm_paidOrder');showErr(j.error||'Please unlock.');go('s-paywall');return;}
+    if(!j.requestId)throw new Error(j.error||'could not start video');
+    vidCaptionText=((j.caption||'')+'\n'+(j.tags||'')).trim();
+    document.getElementById('vidRemainTxt').textContent=(j.remaining>0?(j.remaining+' videos left in this pack'):'Last video in this pack');
+    pollVideo(j.requestId,t,prog);
+  }catch(e){clearInterval(t);showErr('Video failed: '+e.message);go('s-result');}
+}
+function pollVideo(requestId,t,prog){
+  let tries=0;
+  const iv=setInterval(async()=>{
+    tries++;
+    if(tries>40){clearInterval(iv);clearInterval(t);showErr('Video is taking too long, please try again.');go('s-result');return;}
+    try{
+      const r=await fetch('/api/video/status?requestId='+encodeURIComponent(requestId));
+      const j=await r.json();
+      if(j.status==='Succeed'&&j.url){
+        clearInterval(iv);clearInterval(t);prog.style.width='100%';
+        window.resultVidUrl=j.url;
+        document.getElementById('resVid').src=j.url;
+        document.getElementById('vidCap').textContent=vidCaptionText||'';
+        setTimeout(()=>go('s-vidresult'),300);
+      } else if(j.status==='Failed'){
+        clearInterval(iv);clearInterval(t);showErr('Video generation failed, please try again.');go('s-result');
+      }
+    }catch(e){}
+  },6000);
+}
+function copyCaption(btn){
+  const txt=vidCaptionText||''; const old=btn.textContent;
+  const done=()=>{btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=old,1600);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>{prompt('Copy this:',txt);});}
+  else{prompt('Copy this:',txt);}
+}
+async function downloadVid(btn){
+  if(!window.resultVidUrl)return; const old=btn.textContent; btn.textContent='Preparing…';
+  try{ const r=await fetch(window.resultVidUrl); const b=await r.blob(); const u=URL.createObjectURL(b);
+    const a=document.createElement('a'); a.href=u; a.download='sceneme-'+(picked?picked.id:'shoot')+'.mp4'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(u),6000);
+  }catch(e){ window.open(window.resultVidUrl,'_blank'); }
+  btn.textContent=old;
+}
+async function shareVid(btn){
+  if(!window.resultVidUrl)return; const old=btn.textContent; btn.textContent='Opening…';
+  try{ const r=await fetch(window.resultVidUrl); const b=await r.blob();
+    const f=new File([b],'sceneme.mp4',{type:b.type||'video/mp4'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      await navigator.share({files:[f],text:(vidCaptionText||'My dream shoot ✨ (AI) — sceneme')});
+    } else { await downloadVid(btn); alert('Saved! Open Instagram/TikTok and post it ✨'); }
+  }catch(e){}
+  btn.textContent=old;
+}
+
 renderScenes(); checkPaidThenGen();
 </script></body></html>
