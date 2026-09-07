@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sceneme — life is luxury</title>
+<style>
+:root{--cream:#f8f5f0;--ink:#221c28;--gold:#b8924e;--rose:#c98b8b;--muted:#8a8391;--line:#ece6e0;--soft:#f0eae4}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#eae4dc;font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC",sans-serif;color:var(--ink)}
+.app{max-width:440px;margin:0 auto;min-height:100vh;background:var(--cream);position:relative;overflow:hidden}
+.serif{font-family:"Playfair Display",Georgia,serif}
+.screen{display:none;min-height:100vh;animation:fade .4s ease}.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.btn{display:block;width:100%;padding:16px;border:none;border-radius:40px;font-size:16px;font-weight:700;background:var(--ink);color:var(--cream);cursor:pointer;letter-spacing:.3px}
+.btn:active{transform:scale(.98)}.btn.gold{background:linear-gradient(100deg,#c8a45c,#a9853f);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}.btn:disabled{opacity:.35}
+.pad{padding:22px}.tag{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);font-weight:700}
+small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.6;margin-top:14px}
+.back{position:absolute;top:16px;left:16px;z-index:9;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid var(--line);font-size:18px;cursor:pointer}
+.hero{position:relative;height:66vh;min-height:460px;overflow:hidden}
+.hero img{width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.hero .grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(25,20,28,.86) 8%,rgba(25,20,28,.1) 55%,transparent)}
+.hero .cap{position:absolute;left:0;right:0;bottom:26px;padding:0 24px;color:#fff}
+.hero .cap h1{font-size:40px;line-height:1.04;font-weight:800;letter-spacing:.5px}
+.hero .cap p{margin-top:12px;font-size:15px;opacity:.92}
+.brandbar{display:flex;align-items:center;justify-content:space-between;padding:16px 22px}
+.brand{font-size:20px;font-weight:800;letter-spacing:2px}.brand b{color:var(--gold)}
+.gallery{padding:14px 0 4px}.gallery h4{font-size:12px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;padding:0 22px 8px}
+.gstrip{display:flex;gap:10px;overflow-x:auto;padding:0 22px 6px;scrollbar-width:none}.gstrip::-webkit-scrollbar{display:none}
+.gstrip img{width:120px;height:160px;object-fit:cover;border-radius:14px;flex-shrink:0;border:1px solid var(--line)}
+.vs{margin:14px 22px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;font-size:13.5px;color:#4a4550;line-height:1.9}
+.vs h4{font-size:14px;color:var(--ink);margin-bottom:6px;font-weight:800}.vs b{color:var(--gold)}
+.check{display:flex;gap:12px;align-items:flex-start;padding:15px;border:1px solid var(--line);border-radius:14px;margin-bottom:12px;background:#fff;cursor:pointer}
+.check input{width:22px;height:22px;margin-top:1px;accent-color:var(--gold);flex-shrink:0}.check div{font-size:13px;line-height:1.5;color:#4a4550}.check b{color:var(--ink)}
+.drop{border:2px dashed var(--line);border-radius:20px;padding:30px 20px;text-align:center;background:#fff;margin:8px 0 16px;cursor:pointer}
+.drop .ring{width:96px;height:96px;border-radius:50%;margin:0 auto 14px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden}
+.tips{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:13px;color:#4a4550;line-height:1.9}.tips b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 22px 22px}
+.card{border-radius:16px;overflow:hidden;position:relative;aspect-ratio:3/4;background:var(--soft);cursor:pointer;border:2.5px solid transparent}.card.sel{border-color:var(--gold)}
+.card img{width:100%;height:100%;object-fit:cover}.card .info{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff}
+.card .info h3{font-size:14px;font-weight:700}.card .fire{position:absolute;top:8px;left:8px;font-size:11px;background:rgba(184,146,78,.95);color:#fff;padding:3px 8px;border-radius:20px;font-weight:700}
+.genwrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+.genpreview{width:210px;aspect-ratio:3/4;border-radius:20px;overflow:hidden;position:relative;margin-bottom:26px;box-shadow:0 14px 40px rgba(120,100,60,.25);background:var(--soft)}
+.genpreview img{width:100%;height:100%;object-fit:cover;filter:blur(9px) brightness(.9);transform:scale(1.08)}
+.genpreview .shimmer{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%;animation:shim 1.5s linear infinite}
+@keyframes shim{from{background-position:120% 0}to{background-position:-120% 0}}
+.genwrap h2{font-size:23px;font-weight:800;margin-bottom:8px}.genwrap p{color:var(--muted);font-size:14px;min-height:20px}
+.progline{height:6px;width:70%;background:var(--soft);border-radius:6px;margin:22px auto 18px;overflow:hidden}.progline i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c8a45c,#a9853f);transition:width .35s}
+.genstrip{font-size:12px;color:var(--gold);font-weight:700;background:#fff;border:1px solid var(--line);padding:8px 16px;border-radius:20px}
+.result-img{position:relative;background:#000}.result-img img{width:100%;display:block}
+.wm{position:absolute;right:12px;bottom:12px;font-size:12px;font-weight:800;color:#fff;letter-spacing:1px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.ailbl{position:absolute;left:12px;top:12px;font-size:10px;background:rgba(0,0,0,.55);color:#fff;padding:4px 9px;border-radius:20px}
+.wmrow{display:flex;gap:10px;align-items:center;margin:14px 22px 0;font-size:13px;color:#4a4550;cursor:pointer}.wmrow input{width:20px;height:20px;accent-color:var(--gold);flex-shrink:0}
+.paywall{margin:16px 22px 0;background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}
+.paywall .price{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}.paywall .price b{font-size:32px}.paywall .price s{color:var(--muted);font-size:15px}
+.paywall ul{list-style:none;margin:12px 0 16px;font-size:13.5px;color:#4a4550}.paywall li{padding:5px 0 5px 24px;position:relative}.paywall li:before{content:"✓";position:absolute;left:0;color:var(--gold);font-weight:800}
+.pwprev{display:flex;gap:12px;align-items:center;margin-bottom:16px}.pwprev img{width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
+.row2{display:flex;gap:10px;padding:14px 22px 30px}.row2 .btn{padding:14px;font-size:14px}
+.hint{text-align:center;font-size:12px;color:var(--muted);padding:10px 22px}
+.err{background:#fbeaea;border:1px solid #e7c3c3;color:#a33;font-size:13px;padding:10px 14px;border-radius:12px;margin:0 22px 12px;display:none}
+</style></head>
+<body><div class="app">
+<input type="file" id="file" accept="image/*" hidden>
+
+  <section class="screen active" id="s-landing">
+    <div class="brandbar"><div class="brand">SCENE<b>ME</b></div><div class="tag">Life is luxury</div></div>
+    <div class="hero"><img src="assets/hd/婚纱demo.jpg" alt=""><div class="grad"></div>
+      <div class="cap"><div class="tag" style="color:#e7cf95">One selfie. Every dream.</div>
+        <h1 class="serif">Your dream photos,<br>without the $2,000.</h1>
+        <p>Wedding gowns, Maldives, red carpets — dozens of looks from one selfie. Every original is yours. No arguing, no upsell.</p></div></div>
+    <div class="gallery"><h4>✨ Looks you could have today</h4>
+      <div class="gstrip">
+        <img src="assets/hd/婚纱demo.jpg"><img src="assets/hd/马代demo.jpg"><img src="assets/hd/红毯demo.jpg"><img src="assets/hd/巴厘demo.jpg"><img src="assets/hd/夏威夷demo.jpg">
+      </div></div>
+    <div class="vs"><h4>Why Sceneme, not a $2,000 studio</h4>
+      · <b>Dozens of looks</b> (10+ wedding gowns × venues) vs a few<br>
+      · <b>Every original photo is yours</b> — studios upcharge / hold them back<br>
+      · No pressure, no upsell · redo anytime</div>
+    <div class="pad" style="padding-top:14px"><button class="btn gold" onclick="go('s-gate')">Start →</button>
+      <small class="legal">18+ · AI-generated · your own photo only · no real celebrities.</small></div>
+  </section>
+
+  <section class="screen" id="s-gate"><button class="back" onclick="go('s-landing')">‹</button>
+    <div class="pad" style="padding-top:70px"><div class="tag">Before we start</div>
+      <h1 class="serif" style="font-size:28px;margin:8px 0 20px">A quick, honest heads-up</h1>
+      <label class="check"><input type="checkbox" id="c18" onchange="gate()"><div><b>I'm 18 or older.</b> Adults only.</div></label>
+      <label class="check"><input type="checkbox" id="cbio" onchange="gate()"><div><b>I agree to face processing.</b> We analyze facial geometry to create your images and <b>delete face data right after</b> (original ≤7 days).</div></label>
+      <label class="check"><input type="checkbox" id="cown" onchange="gate()"><div><b>This is me</b>, or someone who gave me permission. No other people or celebrities.</div></label>
+      <button class="btn" id="gateBtn" disabled onclick="go('s-upload')">Agree & continue</button>
+      <small class="legal">Not available in IL, TX. Every image is labeled AI-generated. See Privacy & Terms.</small></div>
+  </section>
+
+  <section class="screen" id="s-upload"><button class="back" onclick="go('s-gate')">‹</button>
+    <div class="pad" style="padding-top:70px"><div class="tag">Step 1</div>
+      <h1 class="serif" style="font-size:28px;margin:8px 0 4px">Upload a clear selfie</h1>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:14px">Front-facing, face large — this is what makes it look like <i>you</i>.</p>
+      <div class="drop" onclick="document.getElementById('file').click()"><div class="ring" id="ring">＋</div>
+        <div style="font-weight:700" id="upTxt">Tap to upload a photo</div><div style="font-size:12px;color:var(--muted);margin-top:4px" id="upSub">Even light · no heavy filters</div></div>
+      <div class="tips"><b>Best results:</b><br>✓ Look at the camera &nbsp; ✓ Face large & sharp<br>✓ Even light &nbsp; ✗ Blurry / far / sunglasses</div>
+      <button class="btn" id="upBtn" disabled style="margin-top:16px" onclick="go('s-scenes')">Pick a look →</button></div>
+  </section>
+
+  <section class="screen" id="s-scenes"><button class="back" onclick="go('s-upload')">‹</button>
+    <div class="pad" style="padding:70px 22px 6px"><div class="tag">Step 2</div>
+      <h1 class="serif" style="font-size:28px;margin:8px 0 2px">Choose your dream</h1>
+      <p style="color:var(--muted);font-size:14px">New looks & gowns added weekly.</p></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="screen" id="s-paywall"><button class="back" onclick="go('s-scenes')">‹</button>
+    <div class="pad" style="padding-top:70px"><div class="tag">Step 3 · Unlock</div>
+      <h1 class="serif" style="font-size:27px;margin:8px 0 16px">Create your shoot</h1>
+      <div class="pwprev"><img id="pwImg" src="assets/hd/婚纱demo.jpg"><div><div style="font-weight:700" id="pwScene">Wedding</div><div style="font-size:13px;color:var(--muted)">You, styled into this look</div></div></div>
+      <div class="paywall" style="margin:0">
+        <div class="price"><b>$12.99</b><s>$29.99</s><span style="color:var(--gold);font-weight:700;font-size:13px">launch</span></div>
+        <ul><li><b>20 photos</b> — multiple gowns & venues</li><li>Full resolution, every original yours</li><li>Mix any looks · redo anytime</li></ul>
+        <button class="btn gold" id="payBtn" onclick="payAndGen(this)">Unlock & Create — $12.99</button>
+        <small class="legal">vs $2,000+ at a studio. Pay first, then we generate.</small>
+      </div></div>
+  </section>
+
+  <section class="screen" id="s-gen"><div class="genwrap">
+    <div class="genpreview"><img id="genPrev" src="assets/hd/婚纱demo.jpg"><div class="shimmer"></div></div>
+    <h2 class="serif" id="genTitle">Styling your shoot…</h2><p id="genMsg">Fitting the gown</p>
+    <div class="progline"><i id="prog"></i></div><div class="genstrip">✨ real AI generation · ~20s</div></div>
+  </section>
+
+  <section class="screen" id="s-result"><button class="back" onclick="go('s-scenes')">‹</button>
+    <div class="result-img"><img id="resImg" src="assets/hd/婚纱demo.jpg" crossorigin="anonymous"><span class="ailbl">✨ AI-generated</span><span class="wm" id="wmTag">@sceneme</span></div>
+    <label class="wmrow"><input type="checkbox" id="wmToggle" checked onchange="toggleWm()"><span><b>Keep @sceneme watermark</b> — off = clean image</span></label>
+    <div class="hint" id="remainTxt"></div>
+    <div class="row2"><button class="btn gold" onclick="downloadImg(this)">⬇ Download</button><button class="btn" onclick="shareImg(this)">Share</button></div>
+    <div class="row2" style="padding-top:2px"><button class="btn ghost" onclick="anotherScene()">Try another look</button></div>
+  </section>
+
+  <div class="err" id="errBox"></div>
+</div>
+<script>
+const SCENES=[
+ {id:'wedding',name:'Wedding · 10+ gowns',hot:'🔥 #1',img:'assets/hd/婚纱demo.jpg'},
+ {id:'maldives',name:'Maldives',hot:'Trending',img:'assets/hd/马代demo.jpg'},
+ {id:'bali',name:'Bali',hot:'Trending',img:'assets/hd/巴厘demo.jpg'},
+ {id:'hawaii',name:'Hawaii',hot:'New',img:'assets/hd/夏威夷demo.jpg'},
+ {id:'redcarpet',name:'Red Carpet',hot:'🔥 Hot',img:'assets/hd/红毯demo.jpg'},
+ {id:'socialite',name:'Socialite',hot:'New',img:'assets/hd/红毯demo.jpg'},
+];
+let picked=null;
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function gate(){document.getElementById('gateBtn').disabled=!(c18.checked&&cbio.checked&&cown.checked);}
+function showErr(m){const e=document.getElementById('errBox');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',5000);}
+document.getElementById('file').addEventListener('change',function(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const img=new Image(); const rd=new FileReader();
+  rd.onload=e=>{img.onload=()=>{
+    const max=1024, s=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const data=c.toDataURL('image/jpeg',0.85);
+    try{localStorage.setItem('gm_pet',data);}catch(_){}
+    document.getElementById('ring').innerHTML='<img src="'+data+'" style="width:100%;height:100%;object-fit:cover">';
+    document.getElementById('upTxt').textContent='Looks great ✓';document.getElementById('upSub').textContent='Tap to change';
+    document.getElementById('upBtn').disabled=false;
+  }; img.src=e.target.result;};
+  rd.readAsDataURL(f);
+});
+function renderScenes(){grid.innerHTML=SCENES.map(s=>`<div class="card" onclick="choose('${s.id}',this)"><img src="${s.img}"><span class="fire">${s.hot}</span><div class="info"><h3>${s.name}</h3></div></div>`).join('');}
+function choose(id,el){picked=SCENES.find(x=>x.id===id);document.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));el&&el.classList.add('sel');
+  document.getElementById('pwImg').src=picked.img;document.getElementById('pwScene').textContent=picked.name;
+  if(localStorage.getItem('gm_paidOrder')){runGenerate();} else {go('s-paywall');}
+}
+async function payAndGen(btn){
+  if(!localStorage.getItem('gm_pet')){showErr('Please upload a photo first.');go('s-upload');return;}
+  const old=btn.textContent;btn.disabled=true;btn.textContent='Opening checkout…';
+  try{ localStorage.setItem('gm_scene',picked.id);
+    const r=await fetch('/api/pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sku:'shoot'})});
+    const j=await r.json(); if(!j.url)throw new Error(j.error||'checkout failed');
+    localStorage.setItem('gm_order',j.orderNo); window.location.href=j.url;
+  }catch(e){btn.disabled=false;btn.textContent=old;showErr('Payment unavailable: '+e.message);}
+}
+async function checkPaidThenGen(){
+  const order=localStorage.getItem('gm_order'); if(!order) return;
+  for(let i=0;i<12;i++){ try{
+    const r=await fetch('/api/pay/status?order_no='+encodeURIComponent(order)); const j=await r.json();
+    if(j.status==='paid'){ localStorage.setItem('gm_paidOrder',order); localStorage.removeItem('gm_order');
+      const sc=localStorage.getItem('gm_scene'); if(sc){picked=SCENES.find(x=>x.id===sc)||SCENES[0];} runGenerate(); return; }
+  }catch(e){} await new Promise(res=>setTimeout(res,2500)); }
+}
+const MSGS=['Placing you in the scene…','Fitting the gown…','Setting the venue light…','Final touches…','De-AI polish…'];
+async function runGenerate(){
+  const order=localStorage.getItem('gm_paidOrder'); const pet=localStorage.getItem('gm_pet');
+  if(!order){go('s-paywall');return;} if(!pet){showErr('Upload a photo first.');go('s-upload');return;}
+  if(!picked){picked=SCENES[0];}
+  document.getElementById('genPrev').src=picked.img; go('s-gen'); document.getElementById('genTitle').textContent='Styling · '+picked.name;
+  let p=0,i=0;const prog=document.getElementById('prog'),msg=document.getElementById('genMsg');
+  const t=setInterval(()=>{p=Math.min(95,p+6+Math.random()*12);prog.style.width=p+'%';msg.textContent=MSGS[Math.min(i++,MSGS.length-1)];},700);
+  try{
+    const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scene:picked.id,image:pet,orderNo:order})});
+    const j=await r.json(); clearInterval(t); prog.style.width='100%';
+    if(r.status===402){ localStorage.removeItem('gm_paidOrder'); showErr(j.error||'Please unlock.'); go('s-paywall'); return; }
+    if(!j.url) throw new Error(j.error||'generation failed');
+    setTimeout(()=>{window.resultUrl=j.url; const px='/api/image?url='+encodeURIComponent(j.url);
+      document.getElementById('resImg').src=px; document.getElementById('wmToggle').checked=true; toggleWm();
+      document.getElementById('remainTxt').textContent=(j.remaining>0?(j.remaining+' photos left in this pack'):'Pack used up — unlock more looks');
+      if(j.remaining<=0)localStorage.removeItem('gm_paidOrder'); go('s-result');},350);
+  }catch(e){clearInterval(t);showErr('Generation failed: '+e.message);go('s-scenes');}
+}
+function anotherScene(){ go('s-scenes'); }
+function toggleWm(){ document.getElementById('wmTag').style.display=document.getElementById('wmToggle').checked?'block':'none'; }
+async function renderBlob(){
+  const img=document.getElementById('resImg'); await img.decode().catch(()=>{});
+  const c=document.createElement('canvas'); c.width=img.naturalWidth||1024; c.height=img.naturalHeight||1365;
+  const x=c.getContext('2d'); x.drawImage(img,0,0,c.width,c.height);
+  if(document.getElementById('wmToggle').checked){ const fs=Math.round(c.width*0.034); x.font='800 '+fs+'px -apple-system,sans-serif';
+    x.textAlign='right'; x.textBaseline='bottom'; x.shadowColor='rgba(0,0,0,.5)'; x.shadowBlur=fs*0.4;
+    x.fillStyle='rgba(255,255,255,.92)'; x.fillText('@sceneme',c.width-fs*0.6,c.height-fs*0.6); }
+  return await new Promise(res=>c.toBlob(res,'image/jpeg',0.95));
+}
+async function downloadImg(btn){ const old=btn.textContent; btn.textContent='Preparing…';
+  try{ const b=await renderBlob(); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='sceneme-'+(picked?picked.id:'shoot')+'.jpg'; a.click(); setTimeout(()=>URL.revokeObjectURL(u),4000);
+  }catch(e){ if(window.resultUrl) window.open(window.resultUrl,'_blank'); } btn.textContent=old; }
+async function shareImg(btn){ const old=btn.textContent; btn.textContent='Opening…';
+  try{ const b=await renderBlob(); const f=new File([b],'sceneme.jpg',{type:'image/jpeg'});
+    if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], text:'My dream shoot ✨ (AI) — sceneme'}); }
+    else { await downloadImg(btn); alert('Saved! Open Instagram/TikTok and post it ✨'); }
+  }catch(e){} btn.textContent=old; }
+renderScenes(); checkPaidThenGen();
+</script></body></html>
