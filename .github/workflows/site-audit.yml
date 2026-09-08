@@ -1,0 +1,22 @@
+name: Site Audit
+
+# 上线关卡:英文页零中文 · lang 属性 · CSR 降级 · SEO 元数据
+# 脚本源在 lumee-docs-shared/audit/site-audit.js,本仓库存的是副本
+# (跨私有仓库 checkout 需要 token,副本换零配置)。上游更新时同步这个文件。
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 跑上线关卡
+        run: node .github/site-audit.js --dir .
