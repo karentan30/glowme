@@ -1,0 +1,21 @@
+# Sceneme (GlowMe)
+
+> Sceneme turns one selfie into a set of AI-generated luxury photoshoot photos — wedding gowns, Maldives beaches, red carpet events, Bali, and Hawaii — for a fraction of the cost of a real photo studio. Upload a clear front-facing selfie, pick a look, and get styled photos in about 20 seconds each.
+
+## What Sceneme does
+
+Sceneme is a single-page web app. A user uploads one selfie, agrees to a short consent step (18+, face-processing consent, ownership/permission confirmation), picks a scene from a growing collection (wedding, red carpet, Maldives, Bali, Hawaii), pays for a one-time pack, and receives AI-generated photos in that scene. Generated photos can optionally be turned into a short AI video with a ready-made social caption.
+
+## Pricing (one-time, no subscription)
+
+- **Mini — $4.99**: 5 photos, one look.
+- **Dream Shoot — $12.99** (most popular): 20 photos across multiple gowns and venues.
+- **Studio — $24.99**: 60 photos, every look, unlimited mixing.
+
+## Privacy and safety
+
+Sceneme analyzes facial geometry only to generate the requested images. The uploaded original photo is deleted within 7 days, and no face data is retained afterward. The service requires the uploaded photo to be of the user or of someone who gave explicit permission, does not generate images of real celebrities or public figures, and is restricted to users 18 and older. Every generated image is labeled AI-generated.
+
+## Core page
+
+- [Sceneme home](https://glowme-six.vercel.app/): The entire product — upload, scene picker, pricing, generation, and results — lives on this single page.
