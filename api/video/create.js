@@ -81,6 +81,15 @@ module.exports = async function handler(req, res) {
 
   // 🔒 付费门:必须已付款订单 + 未超本单视频额度(堵烧钱)
   if (!orderNo.startsWith('GM')) return res.status(402).json({ error: 'Payment required.', code: 'PAY' });
+
+  // 单 IP 滑窗限流(出视频比出图贵得多,给得更紧)。同 generate.js:进程内存,best-effort。
+  if (!global.__gmVidIpHits) global.__gmVidIpHits = new Map();
+  const _ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  const _now = Date.now();
+  const _hits = (global.__gmVidIpHits.get(_ip) || []).filter((t) => _now - t < 60 * 60 * 1000);
+  if (_hits.length >= 20) return res.status(429).json({ error: 'Too many requests, please try again later.', code: 'RATE' });
+  _hits.push(_now); global.__gmVidIpHits.set(_ip, _hits);
+  if (global.__gmVidIpHits.size > 5000) global.__gmVidIpHits.clear();
   const paid = await isOrderPaid(orderNo);
   if (!paid) return res.status(402).json({ error: 'Payment not confirmed yet.', code: 'PAY' });
   const usedThisOrder = orderVids.get(orderNo) || 0;

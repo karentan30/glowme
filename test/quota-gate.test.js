@@ -8,13 +8,21 @@ const createH = require(path + '/pay/create.js');
 const genH    = require(path + '/generate.js');
 
 let lastOutRef = null;
+const ORDER_AMOUNT = {};   // 中台单号 → 下单时服务端写死的金额
 global.fetch = async (url, opts) => {
   const u = String(url);
   if (u.includes('/hub/pay/create')) {
-    lastOutRef = JSON.parse(opts.body).out_ref;
-    return { ok: true, json: async () => ({ order_no: lastOutRef, url: 'https://checkout.test/x' }) };
+    const b = JSON.parse(opts.body);
+    // 照中台真实行为:自己发号 GM+ts14+rand6,out_ref 只留作对账
+    lastOutRef = b.out_ref;
+    const oid = 'GM' + '20260909210000' + Math.random().toString(16).slice(2, 8);
+    ORDER_AMOUNT[oid] = b.amount;
+    return { ok: true, json: async () => ({ order_no: oid, url: 'https://checkout.test/x' }) };
   }
-  if (u.includes('/hub/pay/status')) return { ok: true, json: async () => ({ status: 'paid' }) };
+  if (u.includes('/hub/pay/status')) {
+    const oid = decodeURIComponent(u.split('order_no=')[1] || '');
+    return { ok: true, json: async () => ({ status: 'paid', amount: ORDER_AMOUNT[oid] ?? null, currency: 'usd' }) };
+  }
   if (u.includes('ark.cn-beijing')) return { ok: true, json: async () => ({ data: [{ url: 'https://img.test/1.jpg' }] }) };
   throw new Error('unexpected fetch ' + u);
 };
@@ -57,13 +65,13 @@ async function buyThenBurn(sku, label, ip) {
     if (g.code===200) ok++; else break; }
   console.log(`老订单 ${legacy}  出图 ${ok} 张 (应=20 兜底,不能把已付费用户卡死)`);
 
-  console.log('\n=== 有人手改订单号把档位 m 改成 d 想白嫖 60 张 ===');
+  console.log('\n=== 有人拿 mini 的单号,想按 studio 的量白嫖 ===');
   const cRes = await post(createH, { sku: 'mini' });
-  const tampered = cRes.body.orderNo.slice(0,24) + 'd' + cRes.body.orderNo.slice(25);
+  const tampered = cRes.body.orderNo;   // 单号是中台发的,金额也在中台,客户端改不动
   let ok2 = 0;
   for (let i=0;i<70;i++){ const g = await post(genH,{scene:'wedding',image:'data:image/jpeg;base64,x',orderNo:tampered},'10.0.0.5');
     if (g.code===200) ok2++; else break; }
-  console.log(`改后订单号 ${tampered}  出图 ${ok2} 张 (签名对不上→按最小档5张发货,拿不到60)`);
+  console.log(`改后订单号 ${tampered}  出图 ${ok2} 张 (金额在中台,客户端改不动→只能出5张)`);
 
   console.log('\n=== IP 限流(同一 IP 1小时上限80次)===');
   let n=0; for (let i=0;i<95;i++){ const c=await post(createH,{sku:'studio'});

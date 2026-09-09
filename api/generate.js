@@ -1,6 +1,6 @@
 /**
  * POST /api/generate   body: { scene, image, orderNo }
- * 人像写真:验证已付款订单才调火山出图(每单 GENS_PER_ORDER 张)·堵烧钱。
+ * 人像写真:验证已付款订单才调火山出图·按订单金额判每单能出几张(5/20/60)·堵烧钱。
  * Env: ARK_API_KEY, LUMEE_HUB, HUB_SECRET_GLOWME, GENS_PER_ORDER(默认20)
  */
 'use strict';
@@ -31,24 +31,11 @@ const orderGens = global.__gmOrderGens;
 if (!global.__gmIpHits) global.__gmIpHits = new Map();
 const ipHits = global.__gmIpHits;
 
-// 每档能出几张 —— 必须和 index.html 付费墙上写的一致(5 / 20 / 60),
-// 也和 pay/create.js 的 TIER_CHAR 一一对应。
-const TIER_GENS = { m: 5, s: 20, d: 60 };
-
-/** 从订单号里取档位:GM{ts14}{rand8}{档位1}{sig6}。签名用 HUB_SECRET,客户端伪造不了。
- *  取不到(老订单/签名不符)→ 返回 null,由调用方退回 GENS_PER_ORDER 兜底,
- *  这样本次改动之前已付款的订单不会被卡住。 */
-function tierGensOf(orderNo) {
-  if (!HUB_SECRET || orderNo.length !== 31) return null;
-  const base = orderNo.slice(0, 25);
-  const tier = orderNo[24];
-  const sig  = orderNo.slice(25);
-  if (!TIER_GENS[tier]) return null;
-  // 长度就是 31 说明是新格式,签名却对不上 = 有人手改了档位字符 → 按最小档发货,
-  // 不能退回 GENS_PER_ORDER(20) 兜底,否则改一个字符就能把 $4.99 的 5 张变成 20 张。
-  if (hubSign(HUB_SECRET, base).slice(0, 6) !== sig) return Math.min(...Object.values(TIER_GENS));
-  return TIER_GENS[tier];
-}
+// 金额(美元) → 这一档能出几张。必须和 index.html 付费墙上写的一致,
+// 也和 pay/create.js 的 SKUS 金额一一对应:mini 5 / shoot 20 / studio 60。
+// 金额由中台在下单时按 SKU 白名单服务端写死,查单时原样返回 —— 客户端碰不到,
+// 所以档位是权威的,glowme 这边一个字节都不用存。
+const AMOUNT_GENS = { '4.99': 5, '12.99': 20, '24.99': 60 };
 
 /** 单 IP 滑窗限流。注意:和下面的 orderGens 一样是进程内存,
  *  Vercel 横向扩容时每个实例各算各的 —— 挡得住顺手薅,挡不住铁了心刷。
@@ -67,15 +54,17 @@ async function readBody(req) {
   return new Promise((resolve) => { let raw=''; req.on('data',c=>raw+=c);
     req.on('end',()=>{ try{resolve(JSON.parse(raw||'{}'))}catch{resolve({})} }); req.on('error',()=>resolve({})); });
 }
-async function isOrderPaid(orderNo) {
-  if (!HUB_BASE || !HUB_SECRET) return false;
+/** 向中台查单。回 { paid, amount } —— amount 用来判这一单能出几张。 */
+async function lookupOrder(orderNo) {
+  if (!HUB_BASE || !HUB_SECRET) return { paid: false, amount: null };
   const payload = `project_id=${PROJECT_ID}&order_no=${orderNo}`;
   const sign = hubSign(HUB_SECRET, payload);
   try {
     const r = await fetch(`${HUB_BASE}/hub/pay/status?project_id=${PROJECT_ID}&order_no=${encodeURIComponent(orderNo)}`,
       { headers: { 'X-Project-Id': PROJECT_ID, 'X-Sign': sign }, cache: 'no-store' });
-    const j = await r.json(); return (j?.status === 'paid');
-  } catch { return false; }
+    const j = await r.json();
+    return { paid: j?.status === 'paid', amount: (typeof j?.amount === 'number' ? j.amount : null) };
+  } catch { return { paid: false, amount: null }; }
 }
 
 module.exports = async function handler(req, res) {
@@ -99,10 +88,11 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ error: 'Too many requests, please try again later.', code: 'RATE' });
   }
 
-  const paid = await isOrderPaid(orderNo);
+  const { paid, amount } = await lookupOrder(orderNo);
   if (!paid) return res.status(402).json({ error: 'Payment not confirmed yet.', code: 'PAY' });
 
-  const quota = tierGensOf(orderNo) ?? GENS_PER_ORDER;   // 老订单退回旧上限,不卡已付费用户
+  // 中台没回金额(老版本中台/老订单)→ 退回旧上限,不把已付费用户卡在门外
+  const quota = AMOUNT_GENS[String(amount)] ?? GENS_PER_ORDER;
   const used = orderGens.get(orderNo) || 0;
   if (used >= quota) return res.status(402).json({ error: 'This pack is used up.', code: 'QUOTA' });
 
