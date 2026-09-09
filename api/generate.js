@@ -1,11 +1,14 @@
 /**
- * POST /api/generate   body: { scene, image, orderNo }
+ * POST /api/generate
+ *   单人 body: { scene, image, orderNo }
+ *   双人 body: { sceneId, image, image2, orderNo }  image=左边人 image2=右边人
  * 人像写真:验证已付款订单才调火山出图·按订单金额判每单能出几张(5/20/60)·堵烧钱。
  * Env: ARK_API_KEY, LUMEE_HUB, HUB_SECRET_GLOWME, GENS_PER_ORDER(默认20)
  */
 'use strict';
 
 const { createHmac } = require('crypto');
+const { COUPLE_BY_ID } = require('./couple-scenes.js');
 
 const ARK_KEY = process.env.ARK_API_KEY || '';
 const HUB_BASE = (process.env.LUMEE_HUB || '').replace(/\/$/, '');
@@ -13,6 +16,9 @@ const HUB_SECRET = process.env.HUB_SECRET_GLOWME || '';
 const PROJECT_ID = 'glowme';
 const GENS_PER_ORDER = parseInt(process.env.GENS_PER_ORDER || '20', 10);
 const MODEL = 'doubao-seedream-4-0-250828';
+// 双人合影另用 5.0 pro:多图参考(image 传数组)在这个模型上已验证可用
+// (配方来自 marketing/scripts/slim-jiaozi/gen_image_seedream_ref.py,Karen 在另一台机器实测过)
+const MODEL_COUPLE = 'doubao-seedream-5-0-pro-260628';
 
 const PRE = '真实照片质感的写真,保持输入照片里这个人完全相同的脸和五官身份(眼距鼻子嘴巴脸型一致),自然柔光;';
 const SUF = '。真实照片质感,时尚写真大片,优雅高级,不要卡通不要3D渲染不要塑料皮肤不要过曝不要幼态化不要多余手指不要文字不要其他人脸不要真实名人。';
@@ -76,10 +82,21 @@ module.exports = async function handler(req, res) {
   if (!ARK_KEY) return res.status(503).json({ error: 'Image engine not configured.' });
 
   const body = await readBody(req);
-  const scene = SCENES[body.scene] ? body.scene : null;
-  const image = typeof body.image === 'string' && body.image.startsWith('data:') ? body.image : null;
+  const isDataUri = (v) => typeof v === 'string' && v.startsWith('data:');
+  const image  = isDataUri(body.image)  ? body.image  : null;
+  const image2 = isDataUri(body.image2) ? body.image2 : null;
   const orderNo = (body.orderNo || '').toString();
-  if (!scene || !image) return res.status(400).json({ error: 'Missing scene or image.' });
+
+  // 双人合影:客户端只能传 sceneId,prompt 全在服务端(couple-scenes.js)
+  const couple = body.sceneId ? COUPLE_BY_ID[body.sceneId] : null;
+  const scene  = SCENES[body.scene] ? body.scene : null;
+  if (body.sceneId && !couple) return res.status(400).json({ error: 'Unknown scene.' });
+  if (!couple && !scene) return res.status(400).json({ error: 'Missing scene.' });
+  if (!image) return res.status(400).json({ error: 'Missing photo.' });
+  // 两张都要:少一张就串脸,不如直接挡住(文档里"第一张=左边人,第二张=右边人"是硬规格)
+  if (couple && !image2) {
+    return res.status(400).json({ error: 'Two photos required for couple scenes.', code: 'NEED_TWO' });
+  }
 
   if (!orderNo.startsWith('GM')) return res.status(402).json({ error: 'Payment required.', code: 'PAY' });
 
@@ -96,12 +113,18 @@ module.exports = async function handler(req, res) {
   const used = orderGens.get(orderNo) || 0;
   if (used >= quota) return res.status(402).json({ error: 'This pack is used up.', code: 'QUOTA' });
 
-  const prompt = PRE + SCENES[scene] + SUF;
+  // 单人:老配方(负面词拼在 prompt 尾巴里)。双人:场景库自带 prompt + 独立 negative_prompt。
+  const payload = couple
+    ? { model: MODEL_COUPLE, prompt: couple.prompt, negative_prompt: couple.negative,
+        image: [image, image2],          // 顺序即画面左右,别调换
+        size: '1536x2048', response_format: 'url', watermark: false }
+    : { model: MODEL, prompt: PRE + SCENES[scene] + SUF,
+        image, size: '1536x2048', response_format: 'url', watermark: false };
   let arkRes, arkJson;
   try {
     arkRes = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + ARK_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, prompt, image, size: '1536x2048', response_format: 'url', watermark: false }),
+      body: JSON.stringify(payload),
     });
     arkJson = await arkRes.json();
   } catch (e) { console.error('[generate] ARK unreachable', e); return res.status(502).json({ error: 'Image service temporarily unavailable.' }); }

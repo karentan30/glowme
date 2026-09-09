@@ -29,6 +29,8 @@
     "name": "Sceneme"
   }
 }
+
+try{ setMode(MODE); }catch(_){}
 </script>
 <script type="application/ld+json">
 {
@@ -215,9 +217,36 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
 .tier .tprice s{font-size:11.5px;color:var(--muted)}
 .tier .pop{font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:linear-gradient(105deg,#cba95f,#a9853f);padding:3px 8px;border-radius:20px}
 .tier.feat{border-color:rgba(169,133,63,.4)}
+
+/* 情侣双人模式 —— 0909 */
+.modepick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.mode{background:rgba(255,255,255,.04);border:1px solid rgba(231,207,149,.28);border-radius:14px;
+  padding:12px 8px;color:var(--ink,#f4efe6);text-align:center;cursor:pointer;transition:.18s}
+.mode b{display:block;font-size:15px;letter-spacing:.2px}
+.mode span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.mode.sel{background:rgba(231,207,149,.13);border-color:#e7cf95}
+.cslot{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.03);
+  border:1px dashed rgba(231,207,149,.34);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer}
+.cring{width:60px;height:60px;flex:0 0 60px;border-radius:50%;overflow:hidden;display:flex;
+  align-items:center;justify-content:center;background:rgba(231,207,149,.1);color:#e7cf95;font-size:22px}
+.cring img{width:100%;height:100%;object-fit:cover}
+.cslot b{font-size:14px}
+.csub{font-size:12px;color:var(--muted);margin-top:3px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;-webkit-overflow-scrolling:touch}
+.cats button{white-space:nowrap;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  color:var(--muted);border-radius:999px;padding:7px 14px;font-size:12.5px;cursor:pointer}
+.cats button.on{background:rgba(231,207,149,.15);border-color:#e7cf95;color:#e7cf95}
+.clist{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 22px 24px}
+.citem{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:14px;
+  padding:14px 12px;min-height:76px;display:flex;flex-direction:column;justify-content:center;cursor:pointer;transition:.18s}
+.citem:active{transform:scale(.98)}
+.citem.sel{border-color:#e7cf95;background:rgba(231,207,149,.12)}
+.citem .nm{font-size:13.5px;font-weight:650;line-height:1.35}
+.citem .hot{font-size:10.5px;color:#e7cf95;margin-top:5px;letter-spacing:.4px}
 </style></head>
 <body><div class="app">
 <input type="file" id="file" accept="image/*" hidden>
+<input type="file" id="file2" accept="image/*" hidden>
 
   <section class="screen active" id="s-landing">
     <div class="hero">
@@ -238,7 +267,14 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
       · <b>Dozens of looks</b> — 10+ gowns across venues, not a handful<br>
       · <b>Every original is yours</b> — no upcharge, nothing held back<br>
       · No pressure, no upsell · redo anytime</div>
-    <div class="pad" style="padding-top:16px"><button class="btn gold" onclick="go('s-gate')">Start your shoot</button>
+    <div class="pad" style="padding-top:16px">
+      <div class="modepick">
+        <button class="mode sel" id="mSolo" onclick="setMode('solo')">
+          <b>Solo</b><span>1 photo · 6 looks</span></button>
+        <button class="mode" id="mCouple" onclick="setMode('couple')">
+          <b>Couple</b><span>2 photos · 54 looks</span></button>
+      </div>
+      <button class="btn gold" onclick="go('s-gate')">Start your shoot</button>
       <small class="legal">18+ · AI-generated · your own photo only · no real celebrities.</small></div>
   </section>
 
@@ -256,7 +292,19 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
     <div class="pad" style="padding-top:70px"><div class="tag">Step 1</div>
       <h1 class="serif" style="font-size:28px;margin:8px 0 4px">Upload a clear selfie</h1>
       <p style="color:var(--muted);font-size:14px;margin-bottom:14px">Front-facing, face large — this is what makes it look like <i>you</i>.</p>
-      <div class="drop" onclick="document.getElementById('file').click()"><div class="ring" id="ring">＋</div>
+      <div id="coupleSlots" style="display:none">
+        <div class="cslot" onclick="document.getElementById('file').click()">
+          <div class="cring" id="ringA">＋</div>
+          <div><b>Photo 1 — appears on the <u>left</u></b>
+            <div class="csub" id="subA">Tap to upload</div></div></div>
+        <div class="cslot" onclick="document.getElementById('file2').click()">
+          <div class="cring" id="ringB">＋</div>
+          <div><b>Photo 2 — appears on the <u>right</u></b>
+            <div class="csub" id="subB">Tap to upload</div></div></div>
+        <div class="tips" style="margin-top:12px"><b>Both faces must be front-facing and sharp</b><br>
+          Order matters: photo 1 is placed on the left of the frame, photo 2 on the right.</div>
+      </div>
+      <div class="drop" id="soloDrop" onclick="document.getElementById('file').click()"><div class="ring" id="ring">＋</div>
         <div style="font-weight:700" id="upTxt">Tap to upload a photo</div><div style="font-size:12px;color:var(--muted);margin-top:4px" id="upSub">Even light · no heavy filters</div></div>
       <div class="tips"><b>Best results:</b><br>✓ Look at the camera &nbsp; ✓ Face large & sharp<br>✓ Even light &nbsp; ✗ Blurry / far / sunglasses</div>
       <button class="btn" id="upBtn" disabled style="margin-top:16px" onclick="go('s-scenes')">Pick a look →</button></div>
@@ -265,8 +313,10 @@ small.legal{display:block;font-size:11px;color:var(--muted);line-height:1.7;marg
   <section class="screen" id="s-scenes"><button class="back" onclick="go('s-upload')">‹</button>
     <div class="pad" style="padding:70px 22px 6px"><div class="tag">Step 2</div>
       <h1 class="serif" style="font-size:28px;margin:8px 0 2px">Choose your dream</h1>
-      <p style="color:var(--muted);font-size:14px">New looks & gowns added weekly.</p></div>
+      <p style="color:var(--muted);font-size:14px" id="sceneSub">New looks & gowns added weekly.</p>
+      <div class="cats" id="cats" style="display:none"></div></div>
     <div class="grid" id="grid"></div>
+    <div class="clist" id="clist" style="display:none"></div>
   </section>
 
   <section class="screen" id="s-paywall"><button class="back" onclick="go('s-scenes')">‹</button>
@@ -390,13 +440,20 @@ async function checkPaidThenGen(){
 const MSGS=['Placing you in the scene…','Fitting the gown…','Setting the venue light…','Final touches…','De-AI polish…'];
 async function runGenerate(){
   const order=localStorage.getItem('gm_paidOrder'); const pet=localStorage.getItem('gm_pet');
-  if(!order){go('s-paywall');return;} if(!pet){showErr('Upload a photo first.');go('s-upload');return;}
+  if(!order){go('s-paywall');return;}
+  const needTwo = picked && picked.couple;
+  if(needTwo && !(localStorage.getItem('gm_petA')&&localStorage.getItem('gm_petB'))){
+    showErr('Please upload both photos.'); go('s-upload'); return; }
+  if(!needTwo && !pet){showErr('Upload a photo first.');go('s-upload');return;}
   if(!picked){picked=SCENES[0];}
   document.getElementById('genPrev').src=picked.img; go('s-gen'); document.getElementById('genTitle').textContent='Styling · '+picked.name;
   let p=0,i=0;const prog=document.getElementById('prog'),msg=document.getElementById('genMsg');
   const t=setInterval(()=>{p=Math.min(95,p+6+Math.random()*12);prog.style.width=p+'%';msg.textContent=MSGS[Math.min(i++,MSGS.length-1)];},700);
   try{
-    const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scene:picked.id,image:pet,orderNo:order})});
+    const body = (picked&&picked.couple)
+      ? {sceneId:picked.id, image:localStorage.getItem('gm_petA'), image2:localStorage.getItem('gm_petB'), orderNo:order}
+      : {scene:picked.id, image:pet, orderNo:order};
+    const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json(); clearInterval(t); prog.style.width='100%';
     if(r.status===402){ localStorage.removeItem('gm_paidOrder'); showErr(j.error||'Please unlock.'); go('s-paywall'); return; }
     if(!j.url) throw new Error(j.error||'generation failed');
@@ -406,6 +463,99 @@ async function runGenerate(){
       if(j.remaining<=0)localStorage.removeItem('gm_paidOrder'); go('s-result');},350);
   }catch(e){clearInterval(t);showErr('Generation failed: '+e.message);go('s-scenes');}
 }
+
+/* ═══ 情侣双人模式 · 0909 ═══
+   规格来自 docs/情侣场景prompt库-0907.md:喂 2 张正脸,第一张=画面左边的人,第二张=右边的人。
+   顺序是保真关键,喂反了会串脸,所以 UI 上把「左/右」写死在标签里。 */
+let MODE = localStorage.getItem('gm_mode') || 'solo';
+let COUPLE_SCENES = [], curCat = 'all';
+
+function setMode(m){
+  MODE = m; try{ localStorage.setItem('gm_mode', m); }catch(_){}
+  document.getElementById('mSolo').classList.toggle('sel', m==='solo');
+  document.getElementById('mCouple').classList.toggle('sel', m==='couple');
+  const couple = m==='couple';
+  document.getElementById('coupleSlots').style.display = couple?'block':'none';
+  document.getElementById('soloDrop').style.display   = couple?'none':'';
+  document.querySelector('#s-upload .tips').style.display = couple?'none':'';
+  document.getElementById('grid').style.display  = couple?'none':'';
+  document.getElementById('clist').style.display = couple?'grid':'none';
+  document.getElementById('cats').style.display  = couple?'flex':'none';
+  document.getElementById('sceneSub').textContent = couple
+    ? '54 looks · weddings, long-distance reunions, travel'
+    : 'New looks & gowns added weekly.';
+  refreshUpBtn();
+  if(couple) loadCoupleScenes();
+}
+function refreshUpBtn(){
+  const btn=document.getElementById('upBtn');
+  btn.disabled = MODE==='couple'
+    ? !(localStorage.getItem('gm_petA') && localStorage.getItem('gm_petB'))
+    : !localStorage.getItem('gm_pet');
+}
+/* 缩图后存本地:和单人那条同一套(最长边 1024 / jpeg 0.85),别让 base64 撑爆请求体 */
+function readShrink(file, cb){
+  const img=new Image(), rd=new FileReader();
+  rd.onload=e=>{ img.onload=()=>{
+    const max=1024, k=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    cb(c.toDataURL('image/jpeg',0.85));
+  }; img.src=e.target.result; };
+  rd.readAsDataURL(file);
+}
+function bindCoupleSlot(inputId, key, ringId, subId){
+  document.getElementById(inputId).addEventListener('change', function(ev){
+    const f=ev.target.files[0]; if(!f) return;
+    readShrink(f, data=>{
+      try{ localStorage.setItem(key, data); }catch(_){ showErr('Photo too large, try a smaller one.'); return; }
+      document.getElementById(ringId).innerHTML='<img src="'+data+'">';
+      document.getElementById(subId).textContent='Looks great ✓ · tap to change';
+      refreshUpBtn();
+    });
+  });
+}
+bindCoupleSlot('file2','gm_petB','ringB','subB');
+/* 单人那个 input 在双人模式下当「左边人」用,不另外加控件 */
+document.getElementById('file').addEventListener('change', function(ev){
+  if(MODE!=='couple') return;
+  const f=ev.target.files[0]; if(!f) return;
+  readShrink(f, data=>{
+    try{ localStorage.setItem('gm_petA', data); }catch(_){ return; }
+    document.getElementById('ringA').innerHTML='<img src="'+data+'">';
+    document.getElementById('subA').textContent='Looks great ✓ · tap to change';
+    refreshUpBtn();
+  });
+});
+
+async function loadCoupleScenes(){
+  if(COUPLE_SCENES.length) return renderCouple();
+  try{
+    const r=await fetch('/api/scenes'); const j=await r.json();
+    COUPLE_SCENES = j.scenes||[];
+  }catch(e){ showErr('Could not load looks, please retry.'); return; }
+  const cats=[['all','All']].concat([...new Map(COUPLE_SCENES.map(s=>[s.cat,s.catLabel])).entries()]);
+  document.getElementById('cats').innerHTML = cats.map(([id,label],i)=>
+    `<button class="${i===0?'on':''}" onclick="pickCat('${id}',this)">${label}</button>`).join('');
+  renderCouple();
+}
+function pickCat(id,el){ curCat=id;
+  document.querySelectorAll('#cats button').forEach(b=>b.classList.remove('on'));
+  el&&el.classList.add('on'); renderCouple(); }
+function renderCouple(){
+  const list = COUPLE_SCENES.filter(s=>curCat==='all'||s.cat===curCat);
+  document.getElementById('clist').innerHTML = list.map(s=>
+    `<div class="citem" onclick="chooseCouple('${s.id}',this)">
+       <div class="nm">${s.label}</div>${s.hot?'<div class="hot">✦ MOST LOVED</div>':''}</div>`).join('');
+}
+function chooseCouple(id, el){
+  const sc=COUPLE_SCENES.find(x=>x.id===id); if(!sc) return;
+  picked={ id:sc.id, name:sc.label, couple:true, img:'assets/hd/婚纱demo.jpg' };
+  document.querySelectorAll('.citem').forEach(c=>c.classList.remove('sel')); el&&el.classList.add('sel');
+  document.getElementById('pwScene').textContent=sc.label;
+  if(localStorage.getItem('gm_paidOrder')){ runGenerate(); } else { go('s-paywall'); }
+}
+
 function anotherScene(){ go('s-scenes'); }
 function toggleWm(){ document.getElementById('wmTag').style.display=document.getElementById('wmToggle').checked?'block':'none'; }
 async function renderBlob(){
