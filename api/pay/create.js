@@ -23,6 +23,8 @@ const SKUS = {
   studio: { amount: 24.99, product: 'Sceneme — Studio (60 photos)' },
 };
 const DEFAULT_SKU = 'shoot';
+// 档位 → 订单号里的单字符标记(出图接口据此判每单能出几张·见下方 outTradeNo 注释)
+const TIER_CHAR = { mini: 'm', shoot: 's', studio: 'd' };
 
 function hubSign(secret, payload) {
   return createHmac('sha256', secret)
@@ -59,9 +61,16 @@ module.exports = async function handler(req, res) {
   const sku = SKUS[body.sku] ? body.sku : DEFAULT_SKU;
   const { amount, product } = SKUS[sku];
 
+  // 订单号自带档位标记 + 短签名:GM{ts14}{rand8}{档位1}{sig6} = 31 字符(微信 out_trade_no 上限 32)
+  // 为什么这么做:出图接口只拿得到 orderNo,中台 /hub/pay/status 只回 paid/pending 不回金额,
+  // 而档位原本只存在 pay/create 的进程内存 Map 里 —— 换个 serverless 实例就没了,
+  // 于是三档全都按同一个 GENS_PER_ORDER(20) 发货:$4.99 买 5 张的给 20 张(每单多烧 3 倍出图成本),
+  // $24.99 买 60 张的只给 20 张(货不对板,等着退款)。
+  // 签名用 HUB_SECRET,客户端改不动档位字符 —— 服务端权威,且无需任何存储。
   const rand = randomBytes(4).toString('hex');
   const ts = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
-  const outTradeNo = `GM${ts}${rand}`;
+  const base = `GM${ts}${rand}${TIER_CHAR[sku]}`;
+  const outTradeNo = `${base}${hubSign(HUB_SECRET, base).slice(0, 6)}`;
 
   const hubBody = { method: 'stripe', product, amount, out_ref: outTradeNo, currency: 'usd', return_url: 'https://glowme-fabulousslim.vercel.app/' };
   const rawBody = JSON.stringify(hubBody);

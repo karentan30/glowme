@@ -28,6 +28,39 @@ const SCENES = {
 function hubSign(secret, payload) { return createHmac('sha256', secret).update(Buffer.from(payload, 'utf-8')).digest('hex'); }
 if (!global.__gmOrderGens) global.__gmOrderGens = new Map();
 const orderGens = global.__gmOrderGens;
+if (!global.__gmIpHits) global.__gmIpHits = new Map();
+const ipHits = global.__gmIpHits;
+
+// 每档能出几张 —— 必须和 index.html 付费墙上写的一致(5 / 20 / 60),
+// 也和 pay/create.js 的 TIER_CHAR 一一对应。
+const TIER_GENS = { m: 5, s: 20, d: 60 };
+
+/** 从订单号里取档位:GM{ts14}{rand8}{档位1}{sig6}。签名用 HUB_SECRET,客户端伪造不了。
+ *  取不到(老订单/签名不符)→ 返回 null,由调用方退回 GENS_PER_ORDER 兜底,
+ *  这样本次改动之前已付款的订单不会被卡住。 */
+function tierGensOf(orderNo) {
+  if (!HUB_SECRET || orderNo.length !== 31) return null;
+  const base = orderNo.slice(0, 25);
+  const tier = orderNo[24];
+  const sig  = orderNo.slice(25);
+  if (!TIER_GENS[tier]) return null;
+  // 长度就是 31 说明是新格式,签名却对不上 = 有人手改了档位字符 → 按最小档发货,
+  // 不能退回 GENS_PER_ORDER(20) 兜底,否则改一个字符就能把 $4.99 的 5 张变成 20 张。
+  if (hubSign(HUB_SECRET, base).slice(0, 6) !== sig) return Math.min(...Object.values(TIER_GENS));
+  return TIER_GENS[tier];
+}
+
+/** 单 IP 滑窗限流。注意:和下面的 orderGens 一样是进程内存,
+ *  Vercel 横向扩容时每个实例各算各的 —— 挡得住顺手薅,挡不住铁了心刷。
+ *  真正扛得住的做法要中台落库,补丁见 docs/补丁-中台配额账本.md。 */
+function ipAllowed(ip, limit, windowMs) {
+  const now = Date.now();
+  const hits = (ipHits.get(ip) || []).filter((t) => now - t < windowMs);
+  if (hits.length >= limit) { ipHits.set(ip, hits); return false; }
+  hits.push(now); ipHits.set(ip, hits);
+  if (ipHits.size > 5000) ipHits.clear();   // 防内存无限涨
+  return true;
+}
 
 async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -60,10 +93,18 @@ module.exports = async function handler(req, res) {
   if (!scene || !image) return res.status(400).json({ error: 'Missing scene or image.' });
 
   if (!orderNo.startsWith('GM')) return res.status(402).json({ error: 'Payment required.', code: 'PAY' });
+
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  if (!ipAllowed(ip, 80, 60 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Too many requests, please try again later.', code: 'RATE' });
+  }
+
   const paid = await isOrderPaid(orderNo);
   if (!paid) return res.status(402).json({ error: 'Payment not confirmed yet.', code: 'PAY' });
+
+  const quota = tierGensOf(orderNo) ?? GENS_PER_ORDER;   // 老订单退回旧上限,不卡已付费用户
   const used = orderGens.get(orderNo) || 0;
-  if (used >= GENS_PER_ORDER) return res.status(402).json({ error: 'This pack is used up.', code: 'QUOTA' });
+  if (used >= quota) return res.status(402).json({ error: 'This pack is used up.', code: 'QUOTA' });
 
   const prompt = PRE + SCENES[scene] + SUF;
   let arkRes, arkJson;
@@ -79,5 +120,5 @@ module.exports = async function handler(req, res) {
   if (!arkRes.ok || !url) { console.error('[generate] ARK error', arkRes.status, JSON.stringify(arkJson).slice(0,300)); return res.status(502).json({ error: 'Generation failed, please try again.' }); }
 
   orderGens.set(orderNo, used + 1);
-  return res.status(200).json({ url, remaining: Math.max(0, GENS_PER_ORDER - used - 1) });
+  return res.status(200).json({ url, remaining: Math.max(0, quota - used - 1) });
 };
